@@ -33,9 +33,9 @@ import com.ichi2.utils.title
  */
 class ConfirmationDialog : DialogFragment() {
     private var confirm = Runnable {} // Do nothing by default
-    private var cancel = Runnable {}
 
-    // Do nothing by default
+    private var cancel = Runnable {} // Do nothing by default
+
     @StringRes
     private var positiveButtonTextRes: Int = R.string.dialog_ok
 
