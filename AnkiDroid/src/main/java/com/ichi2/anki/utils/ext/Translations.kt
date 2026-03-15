@@ -28,6 +28,9 @@ fun Translations.cardStatsNoCardClean(): String {
     return cardStatsNoCard().replace("[().]".toRegex(), "")
 }
 
+/** New name (Removes colon for use as a label) */
+fun Translations.actionsNewNameClean(): String = actionsNewName().removeSuffix(":")
+
 /** Previous Card (Study) */
 fun Translations.previousCardStudy() = cardStatsPreviousCard(decksStudy())
 

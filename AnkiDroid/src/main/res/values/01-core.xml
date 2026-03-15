@@ -131,6 +131,7 @@
 
     <!-- Card template editor -->
     <string name="title_activity_template_editor">Card types</string>
+    <string name="delete_card_type_title">Delete card type</string>
     <string name="card_template_editor_front">Front template</string>
     <string name="card_template_editor_back">Back template</string>
     <string name="card_template_editor_styling" maxLength="28">Styling</string>
@@ -139,6 +140,9 @@
     <string name="card_template_editor_insert_field" maxLength="28">Insert field</string>
     <string name="card_template_editor_select_field">Select field</string>
     <string name="card_template_editor_cant_delete">At least one card type is required</string>
+    <string name="add_card_type">Add card type</string>
+    <string name="card_type_name">Card type name</string>
+    <string name="card_type_name_used">Card type name already used</string>
     <plurals name="card_template_editor_confirm_add">
         <item quantity="one">This will create %1$d card. Proceed?</item>
         <item quantity="other">This will create %1$d cards. Proceed?</item>

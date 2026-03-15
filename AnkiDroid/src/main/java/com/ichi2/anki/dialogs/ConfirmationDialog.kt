@@ -17,6 +17,7 @@
 package com.ichi2.anki.dialogs
 
 import android.os.Bundle
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import com.ichi2.anki.R
@@ -32,7 +33,17 @@ import com.ichi2.utils.title
  */
 class ConfirmationDialog : DialogFragment() {
     private var confirm = Runnable {} // Do nothing by default
-    private var cancel = Runnable {} // Do nothing by default
+    private var cancel = Runnable {}
+
+        // Do nothing by default
+    @StringRes
+    private var positiveButtonTextRes: Int = R.string.dialog_ok
+
+    fun setPositiveButton(
+        @StringRes resId: Int,
+    ) {
+        this.positiveButtonTextRes = resId
+    }
 
     fun setArgs(message: String?) {
         setArgs("", message)
@@ -63,7 +74,7 @@ class ConfirmationDialog : DialogFragment() {
         return AlertDialog.Builder(requireContext()).create {
             title(text = (if ("" == title) res.getString(R.string.app_name) else title)!!)
             message(text = requireArguments().getString("message")!!)
-            positiveButton(R.string.dialog_ok) {
+            positiveButton(positiveButtonTextRes) {
                 confirm.run()
             }
             negativeButton(R.string.dialog_cancel) {

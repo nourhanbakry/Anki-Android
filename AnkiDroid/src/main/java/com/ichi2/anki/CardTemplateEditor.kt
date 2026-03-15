@@ -87,6 +87,7 @@ import com.ichi2.anki.libanki.getStockNotetype
 import com.ichi2.anki.libanki.getStockNotetypeKinds
 import com.ichi2.anki.libanki.utils.append
 import com.ichi2.anki.model.SelectableDeck
+import com.ichi2.anki.notetype.AddCardTypeDialog
 import com.ichi2.anki.notetype.RenameCardTemplateDialog
 import com.ichi2.anki.notetype.RepositionCardTemplateDialog
 import com.ichi2.anki.observability.undoableOp
@@ -775,9 +776,15 @@ open class CardTemplateEditor :
             val ordinal = templateEditor.mainBinding.cardTemplateEditorPager.currentItem
             val template = templateEditor.tempNoteType!!.getTemplate(ordinal)
 
+            val existingNames =
+                templateEditor.tempNoteType!!
+                    .notetype.templates
+                    .map { it.name }
+
             RenameCardTemplateDialog.showInstance(
                 requireContext(),
                 prefill = template.name,
+                existingNames = existingNames,
             ) { newName ->
                 template.name = newName
                 Timber.i("updated card template name")
@@ -915,17 +922,26 @@ open class CardTemplateEditor :
                 Timber.w("addCardTemplate attempted on cloze note type")
                 return
             }
-            // Show confirmation dialog
-            val ordinal = templateEditor.mainBinding.cardTemplateEditorPager.currentItem
-            // isOrdinalPendingAdd method will check if there are any new card types added or not,
-            // if TempModel has new card type then numAffectedCards will be 0 by default.
-            val numAffectedCards =
-                if (!CardTemplateNotetype.isOrdinalPendingAdd(templateEditor.tempNoteType!!, ordinal)) {
-                    templateEditor.getColUnsafe.notetypes.tmplUseCount(templateEditor.tempNoteType!!.notetype, ordinal)
-                } else {
-                    0
-                }
-            confirmAddCards(templateEditor.tempNoteType!!.notetype, numAffectedCards)
+            // Show new card type name dialog
+            val templates = templateEditor.tempNoteType!!.notetype.templates
+            val defaultName = newCardName(templates)
+            val existingNames = templates.map { it.name }
+            AddCardTypeDialog.showInstance(requireContext(), defaultName, existingNames) { enteredName ->
+                // Show confirmation dialog
+                val ordinal = templateEditor.mainBinding.cardTemplateEditorPager.currentItem
+                // isOrdinalPendingAdd method will check if there are any new card types added or not,
+                // if TempModel has new card type then numAffectedCards will be 0 by default.
+                val numAffectedCards =
+                    if (!CardTemplateNotetype.isOrdinalPendingAdd(templateEditor.tempNoteType!!, ordinal)) {
+                        templateEditor.getColUnsafe.notetypes.tmplUseCount(templateEditor.tempNoteType!!.notetype, ordinal)
+                    } else {
+                        0
+                    }
+//                confirmAddCards(templateEditor.tempNoteType!!.notetype, numAffectedCards, enteredName)
+                executeWithSyncCheck(
+                    Runnable { addNewTemplate(templateEditor.tempNoteType!!.notetype, enteredName) },
+                )
+            }
         }
 
         fun saveNoteType(): Boolean {
@@ -1309,7 +1325,9 @@ open class CardTemplateEditor :
                     numAffectedCards,
                     tmpl.jsonObject.optString("name"),
                 )
-            d.setArgs(msg)
+            val title = resources.getString(R.string.delete_card_type_title)
+            d.setArgs(title, msg)
+            d.setPositiveButton(R.string.dialog_positive_delete)
 
             val deleteCard = Runnable { deleteTemplate(tmpl, notetype) }
             val confirm = Runnable { executeWithSyncCheck(deleteCard) }
@@ -1325,6 +1343,7 @@ open class CardTemplateEditor :
         private fun confirmAddCards(
             notetype: NotetypeJson,
             numAffectedCards: Int,
+            enteredName: String,
         ) {
             val d = ConfirmationDialog()
             val msg =
@@ -1337,7 +1356,7 @@ open class CardTemplateEditor :
                 )
             d.setArgs(msg)
 
-            val addCard = Runnable { addNewTemplate(notetype) }
+            val addCard = Runnable { addNewTemplate(notetype, enteredName) }
             val confirm = Runnable { executeWithSyncCheck(addCard) }
             d.setConfirm(confirm)
             templateEditor.showDialogFragment(d)
@@ -1411,12 +1430,15 @@ open class CardTemplateEditor :
          * Add new template to a given note type
          * @param noteType note type to add new template to
          */
-        private fun addNewTemplate(noteType: NotetypeJson) {
+        private fun addNewTemplate(
+            noteType: NotetypeJson,
+            name: String,
+        ) {
             // Build new template
             val oldCardIndex = requireArguments().getInt(CARD_INDEX)
             val templates = noteType.templates
             val oldTemplate = templates[oldCardIndex]
-            val newTemplate = Notetypes.newTemplate(newCardName(templates))
+            val newTemplate = Notetypes.newTemplate(name)
             // Set up question & answer formats
             newTemplate.qfmt = oldTemplate.qfmt
             newTemplate.afmt = oldTemplate.afmt
