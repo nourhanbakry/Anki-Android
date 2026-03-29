@@ -575,7 +575,7 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
             when (selectedSubDialog) {
                 EXTEND_NEW -> deferredDefaults.getCompleted().labelForNewQueueAvailable()
                 EXTEND_REV -> deferredDefaults.getCompleted().labelForReviewQueueAvailable()
-                STUDY_FORGOT -> resources.getString(R.string.custom_study_review_forgotten_cards)
+                STUDY_FORGOT -> TR.customStudyReviewForgottenCards()
                 STUDY_AHEAD,
                 STUDY_PREVIEW,
                 STUDY_TAGS,
