@@ -439,11 +439,11 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
             if (contextMenuOption == STUDY_FORGOT) {
                 if (userInputValue == null) {
                     dialog.positiveButton.isEnabled = false
-                    binding.detailsEditText2Layout.error = "Invalid number"
+                    binding.detailsEditText2Layout.error = getString(R.string.invalid_value)
                     return@doAfterTextChanged
                 }
                 if (userInputValue == 0) {
-                    binding.detailsEditText2Layout.error = "leading zeros is not allowed"
+                    binding.detailsEditText2Layout.error = getString(R.string.custom_study_ahead_prevent_leading_zeros)
                     dialog.positiveButton.isEnabled = false
                     return@doAfterTextChanged
                 }
@@ -462,7 +462,7 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
                         binding.detailsEditText2Layout.error = null
                         dialog.positiveButton.isEnabled = true
                     } else {
-                        binding.detailsEditText2Layout.error = "No cards matched the criteria"
+                        binding.detailsEditText2Layout.error = getString(R.string.no_cards_matched_criteria)
                         dialog.positiveButton.isEnabled = false
                     }
                 }

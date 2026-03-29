@@ -458,5 +458,6 @@ opening the system text to speech settings fails">Failed to open text to speech 
     <!-- Other errors -->
     <!-- Similar to TR.qtMiscNameExists(): "Name exists." -->
     <string name="error_name_exists">Name already exists</string>
+    <string name="no_cards_matched_criteria">No cards matched the criteria</string>
 </resources>
 

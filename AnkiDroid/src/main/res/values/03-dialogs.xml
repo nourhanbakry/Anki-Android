@@ -48,6 +48,8 @@
     <string name="custom_study_rev_extend">Increase/decrease (“-3”) today’s review limit by</string>
     <string name="custom_study_forgotten">Review cards forgotten in last:</string>
     <string name="custom_study_ahead">Review ahead by x days:</string>
+    <string name="custom_study_ahead_Invalid_number">Invalid number</string>
+    <string name="custom_study_ahead_prevent_leading_zeros">Value must be greater than 0</string>
     <string name="custom_study_preview">Preview new cards added in the last x days:</string>
     <string name="custom_study_tags">Select x cards from the deck:</string>
 
