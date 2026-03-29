@@ -22,6 +22,8 @@ import android.app.Dialog
 import android.content.res.Resources
 import android.os.Bundle
 import android.os.Parcelable
+import android.text.InputFilter
+import android.text.Spanned
 import android.util.TypedValue
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
@@ -88,6 +90,7 @@ import com.ichi2.utils.setPaddingRelative
 import com.ichi2.utils.textAsIntOrNull
 import com.ichi2.utils.title
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.parcelize.Parcelize
 import net.ankiweb.rsdroid.BackendException
@@ -335,10 +338,18 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
             if (contextMenuOption == EXTEND_NEW || contextMenuOption == EXTEND_REV) {
                 inputType = EditorInfo.TYPE_CLASS_NUMBER or EditorInfo.TYPE_NUMBER_FLAG_SIGNED
             }
+            if (contextMenuOption == STUDY_FORGOT) {
+                filters = arrayOf(InputFilter.LengthFilter(9), NoLeadingZeroFilter())
+                val initialValue = defaultValue.toIntOrNull() ?: 1
+                binding.detailsEditText2Layout.suffixText = resources.getQuantityString(R.plurals.set_due_date_label_suffix, initialValue)
+            }
         }
+
         val positiveBtnLabel =
             if (contextMenuOption == STUDY_TAGS) {
                 TR.customStudyChooseTags().toSentenceCase(R.string.sentence_choose_tags)
+            } else if (contextMenuOption == STUDY_FORGOT) {
+                getString(R.string.dialog_positive_create)
             } else {
                 getString(R.string.dialog_ok)
             }
@@ -421,8 +432,41 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
             }
         }
 
-        binding.detailsEditText2.doAfterTextChanged {
+        binding.detailsEditText2.doAfterTextChanged { text ->
             dialog.positiveButton.isEnabled = userInputValue != null && userInputValue != 0
+            val value = text?.toString()?.toIntOrNull()
+
+            if (contextMenuOption == STUDY_FORGOT) {
+                if (userInputValue == null) {
+                    dialog.positiveButton.isEnabled = false
+                    binding.detailsEditText2Layout.error = "Invalid number"
+                    return@doAfterTextChanged
+                }
+                if (userInputValue == 0) {
+                    binding.detailsEditText2Layout.error = "leading zeros is not allowed"
+                    dialog.positiveButton.isEnabled = false
+                    return@doAfterTextChanged
+                }
+
+                val storedValue = value ?: return@doAfterTextChanged
+                binding.detailsEditText2Layout.suffixText = resources.getQuantityString(R.plurals.set_due_date_label_suffix, storedValue)
+
+                val currentValue = userInputValue
+
+                lifecycleScope.launch {
+                    val hasCards = hasMatchingCards(contextMenuOption, userInputValue)
+
+                    if (currentValue != userInputValue) return@launch
+
+                    if (hasCards) {
+                        binding.detailsEditText2Layout.error = null
+                        dialog.positiveButton.isEnabled = true
+                    } else {
+                        binding.detailsEditText2Layout.error = "No cards matched the criteria"
+                        dialog.positiveButton.isEnabled = false
+                    }
+                }
+            }
         }
 
         // Show soft keyboard
@@ -484,6 +528,29 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
         }
     }
 
+    private suspend fun hasMatchingCards(
+        option: ContextMenuOption,
+        input: Int?,
+    ): Boolean {
+        if (option != STUDY_FORGOT) return true
+
+        val value = input ?: return false
+        if (value <= 0) return false
+
+        return try {
+            withCol {
+                val currentDeckName = decks.name(viewModel.deckId)
+
+                val hasForgottenCards =
+                    findCards("deck:\"$currentDeckName\" rated:$value:1").isNotEmpty()
+                hasForgottenCards
+            }
+        } catch (e: Exception) {
+            Timber.e(e)
+            true
+        }
+    }
+
     /**
      * Loads [CustomStudyDefaults] from the backend
      *
@@ -508,7 +575,7 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
             when (selectedSubDialog) {
                 EXTEND_NEW -> deferredDefaults.getCompleted().labelForNewQueueAvailable()
                 EXTEND_REV -> deferredDefaults.getCompleted().labelForReviewQueueAvailable()
-                STUDY_FORGOT,
+                STUDY_FORGOT -> resources.getString(R.string.custom_study_review_forgotten_cards)
                 STUDY_AHEAD,
                 STUDY_PREVIEW,
                 STUDY_TAGS,
@@ -564,6 +631,25 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
      * Represents actions for managing custom study sessions and extending study limits.
      * These actions are passed between fragments and activities via the FragmentResult API.
      */
+    class NoLeadingZeroFilter : InputFilter {
+        override fun filter(
+            source: CharSequence?,
+            start: Int,
+            end: Int,
+            dest: Spanned?,
+            dstart: Int,
+            dend: Int,
+        ): CharSequence? {
+            val newText = dest?.replaceRange(dstart, dend, source?.subSequence(start, end) ?: "")
+
+            return if (newText != null && newText.length > 1 && newText.startsWith("0")) {
+                ""
+            } else {
+                null
+            }
+        }
+    }
+
     enum class CustomStudyAction {
         EXTEND_STUDY_LIMITS,
         CUSTOM_STUDY_SESSION,
